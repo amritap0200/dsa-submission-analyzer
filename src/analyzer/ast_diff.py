@@ -6,7 +6,7 @@ from TSTree_to_Intermediate_AST import convert_to_intermediateAST
 
 #Check that command line arguments are given as expected
 if len(sys.argv) != 3:
-	print("Usage: python3 compare.py <path to correct .c code> <path to incorrect .c code>")
+	print("Usage: python3 ast_diff.py <path to correct .c code> <path to incorrect .c code>")
 	sys.exit(1)
 
 #Set language
