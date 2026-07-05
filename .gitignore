@@ -1,0 +1,9 @@
+/extra
+
+#Items from python3 virtual environment
+/bin
+/include/python3.12
+/lib
+/lib64
+pyvenv.cfg
+__pycache__

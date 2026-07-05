@@ -137,7 +137,7 @@ def convert(TSCursor, parentNode, languageClass):
 		curNode.children.extend(childNodes)
 		return [curNode]
 
-def convert_to_intermediateAST(TSCursor, language):
+def convert_to_ast(TSCursor, language):
 	if language.lower() == "c": 
 		return convert(TSCursor, None, C_Language())
 	elif language.lower() == "python":
@@ -147,5 +147,5 @@ def convert_to_intermediateAST(TSCursor, language):
 		
 	
 if __name__ == "__main__":
-	print("This is the file which contains all material to convert a tree-sitter tree into our intermediate AST (which is a simplified and pruned version of the original tree).")
+	print("This is the file which contains all material to convert a tree-sitter tree into our AST (which is a simplified and pruned version of the original tree).")
 	

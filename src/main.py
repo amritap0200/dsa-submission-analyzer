@@ -2,11 +2,11 @@ import tree_sitter_c as tsc
 from tree_sitter import Language, Parser
 import json
 import sys
-from TSTree_to_Intermediate_AST import convert_to_intermediateAST
+from analyzer.TSTree_to_AST import convert_to_ast
 
 #Check that command line arguments are given as expected
 if len(sys.argv) != 3:
-	print("Usage: python3 ast_diff.py <path to correct .c code> <path to incorrect .c code>")
+	print("Usage: python3 src/main.py <path to correct .c code> <path to incorrect .c code>")
 	sys.exit(1)
 
 #Set language
@@ -38,16 +38,16 @@ tree2 = parser.parse(bytes(incorrect_code, "utf-8"))
 root1 = tree1.root_node
 root2 = tree2.root_node
 
-#Convert the tree into intermediate ASTNode representation
+#Convert the tree into ASTNode representation
 cursor1 = root1.walk()
-intermediate1 = convert_to_intermediateAST(cursor1, "c")[0]
+ast1 = convert_to_ast(cursor1, "c")[0]
 cursor2 = root2.walk()
-intermediate2 = convert_to_intermediateAST(cursor2, "c")[0]
+ast2 = convert_to_ast(cursor2, "c")[0]
 print("Correct AST:")
-print(json.dumps(intermediate1.to_dict(), indent=4))
+print(json.dumps(ast1.to_dict(), indent=4))
 print("------------------------\n")
 print("Incorrect AST:")
-print(json.dumps(intermediate1.to_dict(), indent=4))
+print(json.dumps(ast2.to_dict(), indent=4))
 print("------------------------\n")
 
 #TODO: Implement the diffing of the two trees by following a simplified version of the GumTree algorithm.
