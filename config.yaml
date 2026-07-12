@@ -1,0 +1,3 @@
+paths:
+  week_dir: "data/week1/A"
+  out_dir: "data/week1/cpg_output"
