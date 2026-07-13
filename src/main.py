@@ -2,7 +2,8 @@ import tree_sitter_c as tsc
 from tree_sitter import Language, Parser
 import json
 import sys
-from analyzer.TSTree_to_AST import convert_to_ast
+from similarity_scorer.TSTree_to_AST import convert_to_ast
+from similarity_scorer.AST_Diff import GT_top_down
 
 #Check that command line arguments are given as expected
 if len(sys.argv) != 3:
@@ -40,9 +41,10 @@ root2 = tree2.root_node
 
 #Convert the tree into ASTNode representation
 cursor1 = root1.walk()
-ast1 = convert_to_ast(cursor1, "c")[0]
+ast1 = convert_to_ast(cursor1, "c")
 cursor2 = root2.walk()
-ast2 = convert_to_ast(cursor2, "c")[0]
+ast2 = convert_to_ast(cursor2, "c")
+
 print("Correct AST:")
 print(json.dumps(ast1.to_dict(), indent=4))
 print("------------------------\n")
@@ -52,5 +54,11 @@ print("------------------------\n")
 
 #TODO: Implement the diffing of the two trees by following a simplified version of the GumTree algorithm.
 
-
+M = GT_top_down(ast1, ast2)
+maxheight = 0
+for (node1, node2) in M:
+	print("MATCHED PAIR: ")
+	print(json.dumps(node1.to_dict_no_children(), indent=4))
+	print(json.dumps(node2.to_dict_no_children(), indent=4))
+	print("--")
 
