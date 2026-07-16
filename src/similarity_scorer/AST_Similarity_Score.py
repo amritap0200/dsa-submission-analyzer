@@ -186,6 +186,6 @@ def get_similarity_score(tree1, tree2):
 
 if __name__ == "__main__":
     print("This file is a partial implementation of the GumTree algorithm for diffing two ASTNode trees.")
-	print("It follows the official algorithm given in Jean-Rémi Falleri et al., but without the tree-edit script in the bottom-up phase.")
-
+	print("It follows the algorithm given in the official GumTree paper, but without the tree-edit script in the bottom-up phase.")
+    print("Paper: \"Fine-grained, Accurate, and Scalable Source Code Differencing\" by Jean-Rémi Falleri et al., 2024.")
 
