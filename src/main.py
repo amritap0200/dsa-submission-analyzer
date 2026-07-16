@@ -3,7 +3,7 @@ from tree_sitter import Language, Parser
 import json
 import sys
 from similarity_scorer.TSTree_to_AST import convert_to_ast
-from similarity_scorer.AST_Diff import GT_top_down
+import similarity_scorer.AST_Similarity_Score as SS
 
 #Check that command line arguments are given as expected
 if len(sys.argv) != 3:
@@ -53,12 +53,18 @@ print(json.dumps(ast2.to_dict(), indent=4))
 print("------------------------\n")
 
 #TODO: Implement the diffing of the two trees by following a simplified version of the GumTree algorithm.
+mapping = SS.GT_top_down(ast1, ast2)
+SS.GT_bottom_up(mapping, ast1, ast2, minDice = 0.5)
+score = SS.GT_dice(mapping, ast1, ast2)	
 
-M = GT_top_down(ast1, ast2)
-maxheight = 0
-for (node1, node2) in M:
-	print("MATCHED PAIR: ")
-	print(json.dumps(node1.to_dict_no_children(), indent=4))
-	print(json.dumps(node2.to_dict_no_children(), indent=4))
-	print("--")
+print("Number of mapped pairs: ", len(mapping))
+for i in mapping:
+	print("MAPPED PAIR: ")
+	print(json.dumps(i[0].to_dict_no_children(), indent=4))
+	print(json.dumps(i[1].to_dict_no_children(), indent=4))
+	print("---")
+
+print("Naive similarity: ", SS.naive_similarity(ast1, ast2))
+
+print("Dice similarity score is: ", score)
 

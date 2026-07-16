@@ -128,6 +128,8 @@ def convert(TSCursor, parentNode, languageClass):
 			curNode = ASTNode(node_type = TSCursor.node.type, label = TSCursor.field_name, parent = parentNode)
 		elif category == TSNodeCategory.ANON_SAVE_TEXT:
 			curNode = ASTNode(node_type = TSCursor.node.type, text = TSCursor.node.text.decode("utf-8"), parent = parentNode)
+			if languageClass.is_operator(TSCursor.node):
+				curNode.type = "operator"
 		else:
 			raise TreeConversionError("Value of TSNodeCategory not recognized for this language")
 
@@ -166,5 +168,4 @@ def convert_to_ast(TSCursor, language):
 		
 	
 if __name__ == "__main__":
-	print("This is the file which contains all material to convert a tree-sitter tree into our AST (which is a simplified and pruned version of the original tree).")
-	
+	print("This is the file which contains all material to convert a tree-sitter tree into our AST (which is a simplified and pruned version of the original tree).")	
