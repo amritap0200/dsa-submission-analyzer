@@ -25,6 +25,9 @@ def GT_dice(mapping, node1, node2):
     for pair in mapping:
         if pair[0] in descendants1 and pair[1] in descendants2:
             mapped_pairs += 1
+    print("Mapped pairs: ", mapped_pairs)
+    print("Descendants of tree1: ", len(descendants1))
+    print("Descendants of tree2: ", len(descendants2))
     return (2*mapped_pairs) / (len(descendants1) + len(descendants2))
 
 #CHATGPT:
@@ -166,16 +169,14 @@ def GT_bottom_up(mapping, tree1, tree2, minDice = 0.5):
         for m in mapping:
             if m[0] == i:
                 mapped = True
-            if m[0] in i.children:
+            if m[0] in get_descendants(i):
                 mapped_children = True
             if mapped and mapped_children:
                 break
-        if not (mapped and mapped_children):
-            continue
-        (candidate, dice_score) = GT_candidate(i, mapping)
-        if candidate and dice_score >= minDice:
-            mapping.append((i, candidate))
-            simple_opt(mapping, i, candidate)
+        if mapped and mapped_children:
+            (candidate, dice_score) = GT_candidate(i, mapping)
+            if candidate and dice_score >= minDice:
+                mapping.append((i, candidate))
 
 def get_similarity_score(tree1, tree2):
     mapping = GT_top_down(tree1, tree2)
@@ -183,9 +184,8 @@ def get_similarity_score(tree1, tree2):
     score = GT_dice(mapping, tree1, tree2)
     return score
 
-
 if __name__ == "__main__":
     print("This file is a partial implementation of the GumTree algorithm for diffing two ASTNode trees.")
-	print("It follows the algorithm given in the official GumTree paper, but without the tree-edit script in the bottom-up phase.")
-    print("Paper: \"Fine-grained, Accurate, and Scalable Source Code Differencing\" by Jean-Rémi Falleri et al., 2024.")
+    print("It follows the algorithm given in the official GumTree paper, but without the tree-edit script in the bottom-up phase.")
+    print("Paper: \"Fine-grained and Accurate Source Code Differencing\" by Jean-Rémi Falleri et al., 2014.")
 
