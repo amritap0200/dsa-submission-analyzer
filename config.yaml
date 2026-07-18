@@ -1,3 +1,7 @@
 paths:
   week_dir: "data/week1/A"
   out_dir: "data/week1/cpg_output"
+
+cpg_generation:
+  dataset_dir: "dataset/week_01"
+  output_dir: "cpg_output/week_01"
