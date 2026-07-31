@@ -29,7 +29,7 @@ def applicable_queries(language: str):
 
 def run_query(query_file: str, cpg_path: str):
     cmd = ["joern", "--script", str(QUERIES_DIR / query_file),
-           "--params", f"cpgPath={cpg_path}"]
+           "--param", f"cpgPath={cpg_path}"]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=90)
         # Joern prints the Scala list repr; extract the Map entries via a light parse
