@@ -1,5 +1,7 @@
 import io.joern.dataflowengineoss.language.toExtendedCfgNode
-import java.io.{File, PrintWriter}
+import java.io.{File, FileWriter, BufferedWriter}
+import java.util.regex.Pattern
+import scala.io.Source
 
 def toJsonValue(v: Any): String = v match {
   case s: String => "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
@@ -139,17 +141,37 @@ def detectMissingReturn(): List[Map[String, Any]] = {
   results.toList
 }
 
-def isWrite(ident: nodes.Identifier): Boolean = {
+// A variable counts as "written" if it's the direct target of a plain
+// assignment, if its address is taken and passed into any call (covers
+// scanf(&x, ...) and pass-by-reference into user functions), or if it's
+// a parameter of the enclosing method (already provided by the caller).
+def isDirectAssignmentTarget(ident: nodes.Identifier): Boolean = {
   ident.inCall.name(".*[Aa]ssignment.*").exists { call =>
-    call.argument.l.headOption.exists { case i: nodes.Identifier => i.id == ident.id; case _ => false }
+    call.argument(1).headOption.exists {
+      case i: nodes.Identifier => i.id == ident.id
+      case _ => false
+    }
   }
+}
+
+def isAddressOfTarget(ident: nodes.Identifier): Boolean = {
+  ident.astParent.isCall.name("<operator>.addressOf").nonEmpty
+}
+
+def isParameterName(ident: nodes.Identifier): Boolean = {
+  ident.method.parameter.name.toSet.contains(ident.name)
+}
+
+def isWrite(ident: nodes.Identifier): Boolean = {
+  isDirectAssignmentTarget(ident) || isAddressOfTarget(ident) || isParameterName(ident)
 }
 
 def detectUninitialized(): List[Map[String, Any]] = {
   val results = scala.collection.mutable.ListBuffer[Map[String, Any]]()
   val allWrites = cpg.identifier.filter(isWrite)
   cpg.identifier.filterNot(isWrite).foreach { readIdent =>
-    val priorWrites = allWrites.name(readIdent.name)
+    val safeName = Pattern.quote(readIdent.name)
+    val priorWrites = allWrites.name(safeName)
     if (readIdent.reachableBy(priorWrites).isEmpty) {
       results += Map("error_type" -> "uninitialized_variable", "line_number" -> readIdent.lineNumber.getOrElse(-1), "node_id" -> readIdent.id, "description" -> s"'${readIdent.name}' read with no reachable prior write.")
     }
@@ -157,44 +179,76 @@ def detectUninitialized(): List[Map[String, Any]] = {
   results.toList
 }
 
-@main def exec(weekDir: String, isC: Boolean = true) = {
+def alreadyProcessed(outFile: File): Set[String] = {
+  if (!outFile.exists()) return Set.empty
+  val source = Source.fromFile(outFile)
+  try {
+    source.getLines().flatMap { line =>
+      val idMatch = "\"student_id\":\\s*\"([^\"]+)\"".r.findFirstMatchIn(line)
+      idMatch.map(_.group(1))
+    }.toSet
+  } finally {
+    source.close()
+  }
+}
+
+@main def exec(weekDir: String, isC: Boolean = true): Unit = {
   val startTime = System.currentTimeMillis()
   val studentDirs = new File(weekDir).listFiles().filter(_.isDirectory).sorted
+  val outFile = new File(weekDir, "error_report.jsonl")
 
-  val allResults = scala.collection.mutable.ListBuffer[String]()
+  val done = alreadyProcessed(outFile)
+  if (done.nonEmpty) {
+    println(s"Resuming: ${done.size} students already recorded in ${outFile.getPath}, skipping them")
+  }
+
+  val writer = new BufferedWriter(new FileWriter(outFile, true))
 
   studentDirs.zipWithIndex.foreach { case (dir, idx) =>
-    val cpgFile = new File(dir, "cpg.bin")
-    if (cpgFile.exists()) {
-      val t0 = System.currentTimeMillis()
-      importCpg(cpgFile.getAbsolutePath)
-
-      val errors = scala.collection.mutable.ListBuffer[Map[String, Any]]()
-      errors ++= detectNullDeref()
-      errors ++= detectBufferOverflow()
-      errors ++= detectInfiniteLoop()
-      errors ++= detectMissingReturn()
-      errors ++= detectUninitialized()
-      if (isC) errors ++= detectMemoryManagement()
-
-      val errorsJson = "[" + errors.map(toJsonObject).mkString(", ") + "]"
-      val record = s"""{"student_id": "${dir.getName}", "file_path": "${cpgFile.getAbsolutePath}", "errors": $errorsJson}"""
-      allResults += record
-
-      val elapsed = (System.currentTimeMillis() - t0) / 1000.0
-      println(s"[${idx + 1}/${studentDirs.length}] ${dir.getName} done in ${elapsed}s")
-
-      close // free this CPG from memory before loading the next
+    if (done.contains(dir.getName)) {
+      println(s"[${idx + 1}/${studentDirs.length}] ${dir.getName} already done, skipping")
     } else {
-      println(s"Skipping ${dir.getName}, no cpg.bin found")
+      val cpgFile = new File(dir, "cpg.bin")
+      if (cpgFile.exists()) {
+        try {
+          val t0 = System.currentTimeMillis()
+          importCpg(cpgFile.getAbsolutePath)
+
+          val errors = scala.collection.mutable.ListBuffer[Map[String, Any]]()
+          errors ++= detectNullDeref()
+          errors ++= detectBufferOverflow()
+          errors ++= detectInfiniteLoop()
+          errors ++= detectMissingReturn()
+          errors ++= detectUninitialized()
+          if (isC) errors ++= detectMemoryManagement()
+
+          val errorsJson = "[" + errors.map(toJsonObject).mkString(", ") + "]"
+          val record = s"""{"student_id": "${dir.getName}", "file_path": "${cpgFile.getAbsolutePath}", "errors": $errorsJson}"""
+
+          writer.write(record)
+          writer.newLine()
+          writer.flush()
+
+          val elapsed = (System.currentTimeMillis() - t0) / 1000.0
+          println(s"[${idx + 1}/${studentDirs.length}] ${dir.getName} done in ${elapsed}s")
+
+          close
+        } catch {
+          case e: Exception =>
+            println(s"[${idx + 1}/${studentDirs.length}] ${dir.getName} FAILED: ${e.getMessage}")
+            val record = s"""{"student_id": "${dir.getName}", "file_path": "${cpgFile.getAbsolutePath}", "errors": [], "processing_error": "${e.getMessage.replace("\"", "'")}"}"""
+            writer.write(record)
+            writer.newLine()
+            writer.flush()
+        }
+      } else {
+        println(s"Skipping ${dir.getName}, no cpg.bin found")
+      }
     }
   }
 
-  val outFile = new File(weekDir, "error_report.json")
-  val pw = new PrintWriter(outFile)
-  pw.write("[" + allResults.mkString(",\n") + "]")
-  pw.close()
-
+  writer.close()
   val totalTime = (System.currentTimeMillis() - startTime) / 1000.0
-  println(s"\nDone. Processed ${studentDirs.length} students in ${totalTime}s. Output: ${outFile.getPath}")
+  println(s"\nDone. Output: ${outFile.getPath}")
+  println(s"Total time this run: ${totalTime}s")
 }
