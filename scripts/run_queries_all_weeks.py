@@ -8,7 +8,7 @@ import sys
 import subprocess
 from pathlib import Path
 
-C_LANGUAGE_WEEKS_DEFAULT = True
+C_LANGUAGE_WEEKS_DEFAULT = True  # set False per-week if a week is ever non-C
 
 
 def run_all(cpg_output_root: str):
@@ -18,7 +18,7 @@ def run_all(cpg_output_root: str):
     for week_dir in week_dirs:
         manifest = week_dir / "generation_manifest.json"
         if not manifest.exists():
-            print(f"Skipping {week_dir.name}, no manifest found (CPGs not generated yet)")
+            print(f"Skipping {week_dir.name}, no manifest found")
             continue
 
         print(f"\n=== Querying {week_dir.name} (single JVM run) ===")
