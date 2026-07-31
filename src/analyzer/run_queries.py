@@ -16,7 +16,7 @@ LANGUAGE_AGNOSTIC_QUERIES = [
     "null_deref.sc", "buffer_overflow.sc", "uninitialized_variable.sc",
     "missing_return.sc", "infinite_loop.sc"
 ]
-C_ONLY_QUERIES = ["memory_leak.sc", "double_free.sc"]
+C_ONLY_QUERIES = ["memory_management.sc"]
 C_LANGUAGES = {"c", "cpp"}
 
 
