@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+Usage: python3 run_queries_all_weeks.py <cpg_output_root>
+Runs detect_all.sc once per week folder, in a single JVM invocation
+covering every student in that week.
+"""
 import sys
 import subprocess
 from pathlib import Path
@@ -19,7 +24,8 @@ def run_all(cpg_output_root: str):
         print(f"\n=== Querying {week_dir.name} (single JVM run) ===")
         cmd = [
             "joern", "--script", "src/analyzer/detect_all.sc",
-            "--params", f"weekDir={week_dir},isC={str(C_LANGUAGE_WEEKS_DEFAULT).lower()}"
+            "--param", f"weekDir={week_dir}",
+            "--param", f"isC={str(C_LANGUAGE_WEEKS_DEFAULT).lower()}"
         ]
         subprocess.run(cmd)
 
