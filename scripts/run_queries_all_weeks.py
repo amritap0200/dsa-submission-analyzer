@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
 Usage: python3 run_queries_all_weeks.py <cpg_output_root>
-Runs the full query orchestrator against every week folder that has
-a generation_manifest.json, i.e. every week CPG generation has completed for.
+Runs detect_all.sc once per week folder, in a single JVM invocation
+covering every student in that week.
 """
 import sys
+import subprocess
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from src.analyzer.run_queries import build_dataset_report
+
+C_LANGUAGE_WEEKS_DEFAULT = True
 
 
 def run_all(cpg_output_root: str):
@@ -19,8 +20,14 @@ def run_all(cpg_output_root: str):
         if not manifest.exists():
             print(f"Skipping {week_dir.name}, no manifest found (CPGs not generated yet)")
             continue
-        print(f"\n=== Querying {week_dir.name} ===")
-        build_dataset_report(str(week_dir), str(manifest))
+
+        print(f"\n=== Querying {week_dir.name} (single JVM run) ===")
+        cmd = [
+            "joern", "--script", "src/analyzer/detect_all.sc",
+            "--param", f"weekDir={week_dir}",
+            "--param", f"isC={str(C_LANGUAGE_WEEKS_DEFAULT).lower()}"
+        ]
+        subprocess.run(cmd)
 
 
 if __name__ == "__main__":
