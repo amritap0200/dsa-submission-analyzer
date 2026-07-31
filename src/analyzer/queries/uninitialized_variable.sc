@@ -4,21 +4,28 @@ import io.joern.dataflowengineoss.language.toExtendedCfgNode
   importCpg(cpgPath)
   val results = scala.collection.mutable.ListBuffer[Map[String, Any]]()
 
-  cpg.identifier.foreach { ident =>
-    val varName = ident.name
-    val assignmentsToVar = cpg.assignment
-      .where(_.target.isIdentifier.name(varName))
-      .argument
+  def isWrite(ident: nodes.Identifier): Boolean = {
+    ident.inCall.name(".*[Aa]ssignment.*").exists { call =>
+      call.argument.l.headOption.exists {
+        case i: nodes.Identifier => i.id == ident.id
+        case _ => false
+      }
+    }
+  }
 
-    val reaches = ident.reachableBy(assignmentsToVar).nonEmpty
-    val isDeclaration = ident.inAssignment.target.isIdentifier.name(varName).nonEmpty
+  val allWrites = cpg.identifier.filter(isWrite)
 
-    if (!reaches && !isDeclaration) {
+  cpg.identifier.filterNot(isWrite).foreach { readIdent =>
+    val varName = readIdent.name
+    val priorWrites = allWrites.name(varName)
+    val reaches = readIdent.reachableBy(priorWrites).nonEmpty
+
+    if (!reaches) {
       results += Map(
         "error_type" -> "uninitialized_variable",
-        "line_number" -> ident.lineNumber.getOrElse(-1),
-        "node_id" -> ident.id,
-        "description" -> s"Variable '$varName' used at line ${ident.lineNumber.getOrElse(-1)} with no reachable prior assignment."
+        "line_number" -> readIdent.lineNumber.getOrElse(-1),
+        "node_id" -> readIdent.id,
+        "description" -> s"Variable '$varName' read at line ${readIdent.lineNumber.getOrElse(-1)} has no reachable prior write."
       )
     }
   }
