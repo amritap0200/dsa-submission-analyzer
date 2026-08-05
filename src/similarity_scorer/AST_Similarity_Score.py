@@ -25,12 +25,8 @@ def GT_dice(mapping, node1, node2):
     for pair in mapping:
         if pair[0] in descendants1 and pair[1] in descendants2:
             mapped_pairs += 1
-    print("Mapped pairs: ", mapped_pairs)
-    print("Descendants of tree1: ", len(descendants1))
-    print("Descendants of tree2: ", len(descendants2))
     return (2*mapped_pairs) / (len(descendants1) + len(descendants2))
 
-#CHATGPT:
 def simple_opt(mapping, t1, t2):
     mapped1 = {a for a,b in mapping}
     mapped2 = {b for a,b in mapping}
@@ -48,12 +44,11 @@ def simple_opt(mapping, t1, t2):
                 simple_opt(mapping,c1,c2)
                 break
 
-def naive_similarity(t1, t2):
+def get_naive_similarity_score(node1, node2):
     #Could revise this to implement the error score in the first paper we read
-    a = {(n.type,n.label) for n in get_descendants(t1)}
-    b = {(n.type,n.label) for n in get_descendants(t2)}
+    a = {(n.type,n.label) for n in get_descendants(node1)}
+    b = {(n.type,n.label) for n in get_descendants(node2)}
     return 2*len(a&b)/(len(a)+len(b))
-#END OF CHATGPT
 
 
 def GT_candidate(node, mapping):
@@ -173,16 +168,16 @@ def GT_bottom_up(mapping, tree1, tree2, minDice = 0.5):
                 mapped_children = True
             if mapped and mapped_children:
                 break
-        if mapped and mapped_children:
+        if not mapped and mapped_children:
             (candidate, dice_score) = GT_candidate(i, mapping)
             if candidate and dice_score >= minDice:
                 mapping.append((i, candidate))
+                simple_opt(mapping, i, candidate)
 
-def get_similarity_score(tree1, tree2):
+def get_dice_similarity_score(tree1, tree2):
     mapping = GT_top_down(tree1, tree2)
     GT_bottom_up(mapping, tree1, tree2)
-    score = GT_dice(mapping, tree1, tree2)
-    return score
+    return GT_dice(mapping, tree1, tree2)
 
 if __name__ == "__main__":
     print("This file is a partial implementation of the GumTree algorithm for diffing two ASTNode trees.")
