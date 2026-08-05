@@ -1,7 +1,17 @@
 import glob
 import sys
+import tomllib
 import subprocess
 import pandas as pd
+
+#Getting path to dataset from config.toml
+config = None
+with open("./config.toml", "rb") as fp:
+	config = tomllib.load(fp)
+if config == None:
+	printf("Error reading config file. Aborting")
+	exit(1) 
+PATH_DATASET_MAIN = config["dataset"]["paths"]["main"]
 
 #Structure of the output CSV file for evaluation results:
 #file_name, compile_success, test_1_result, ..., test_n_result, test_1_score, ..., test_n_score, total_score, "program_is_correct"
@@ -17,7 +27,7 @@ import pandas as pd
 
 
 #Change the below variables to have this program run for all the different weeks of data
-path_main = "/home/sam/Programming/DAA_IDE/lab_ec/week2/"
+path_main = PATH_DATASET_MAIN + "/week2/"
 path_test_file_regex = path_main + "/in*.txt"
 path_res_file_regex = path_main + "/out*.txt"
 driver_name_no_extension = "main"
@@ -64,7 +74,7 @@ for i in range(num_tests):
 colheaders.append("total_score")
 colheaders.append("program_is_correct")
 
-
+'''
 #Compiling the driver .c file
 compile_result = subprocess.run(["gcc", "-c", f"{path_driver_no_extension}.c"], capture_output=True, text=True)
 if compile_result.returncode != 0 :
@@ -159,3 +169,4 @@ print(f"Data has been saved as a csv file (path: {path_output_data}{output_file_
 #Close file pointers in test_file_pointers:
 for i in test_file_pointers:
 	i.close()
+'''
