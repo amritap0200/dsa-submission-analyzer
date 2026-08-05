@@ -1,10 +1,20 @@
-import json
-import os
 import sys
 import subprocess
-from cpgqls_client import CPGQLSClient
+import json
 import re
+import tomllib
+from cpgqls_client import CPGQLSClient
 from bisect import bisect_right 
+
+#Paths to executables
+config = None
+with open("./config.toml", "rb") as fp:
+	config = tomllib.load(fp)
+if config == None:
+	printf("Error reading config file. Aborting")
+	exit(1) 
+GUMTREE = config["executables"]["gumtree"]["main"]
+CPGGEN_C = config["executables"]["joern"]["c2cpg"]
 
 def get_line_and_col(line_ranges, offset_to_search):
 	#Joern uses 1-based indexing
@@ -33,11 +43,6 @@ def get_joern_scalaString_query_result(client, command):
 	#print(nodes)
 	nodes = json.loads(nodes)
 	return nodes
-
-#Paths to executables
-GUMTREE = "/home/sam/Programming/DAA_IDE/gumtree-4.0.0-beta7/bin/gumtree"
-JOERN = "/home/sam/Programming/DAA_IDE/joern-4.0.579/joern"
-CPGGEN_C = "/home/sam/Programming/DAA_IDE/joern-4.0.579/c2cpg.sh"
 
 def get_suggested_edits(path_wrong, path_correct):
 	#Reading the pair of programs

@@ -7,8 +7,6 @@ from similarity_scorer.TSTree_to_AST import convert_to_ast
 from similarity_scorer.AST_Similarity_Score import get_naive_similarity_score, get_dice_similarity_score
 from error_identifier.AST_Edit_Script_Processing import get_suggested_edits
 
-JOERN = "/home/sam/Programming/DAA_IDE/joern-4.0.579/joern"
-
 def find_best_match(correct_submissions, wrong_code_path, min_naive_similarity=0.9):
     #Read the incorrect C file and parse it into a tree sitter tree, then to ASTnode representation.
     wrong_code = None

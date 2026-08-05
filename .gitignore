@@ -3,6 +3,7 @@ cpg_output/
 data/
 /extra/
 /artifacts/
+config.toml
 
 #Items from python3 virtual environment
 /bin/
